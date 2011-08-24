@@ -49,6 +49,6 @@ the `ExampleSet`, you can easily convert to NumPy arrays as in:
 Questions and Issues
 ====================
 
-If you have any questions with this code, or discover any bugs, please create an
+If you find any bugs or have any questions about this code, please create an
 issue on [GitHub](https://github.com/garydoranjr/mldata/issues), or contact Gary
 Doran at <gbd6@case.edu>.
