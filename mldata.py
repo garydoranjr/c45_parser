@@ -6,6 +6,10 @@ import re
 import sys
 import collections
 
+###############################################################################
+#                     CODE FOR FEATURES, EXAMPLES, ETC.                       #
+###############################################################################
+
 class Feature(object):
     """
     Information for a feature
@@ -189,30 +193,37 @@ class Example(collections.MutableSequence):
             normalizer = lambda x: x
         return normalizer([feature.to_float(value)
                            for feature, value in zip(self.schema, self)])
-"""
-Read data from C4.5 format
-"""
 
-NAMES_EXT = '.names'
-DATA_EXT = '.data'
+###############################################################################
+#                            CODE TO PARSE C4.5                               #
+###############################################################################
+
+_NAMES_EXT = '.names'
+_DATA_EXT = '.data'
 
 _COMMENT_RE = '//.*'
 _BINARY_RE = '\\s*0\\s*,\\s*1\\s*'
 
 def parse_c45(file_base, rootdir='.'):
     """
-    Returns an ExampleSet from the
-    C4.5 formatted data
+    Returns an ExampleSet from the parsed C4.5-formatted data file
+
+    Arguments:
+    file_base -- basename of the file, as in 'file_base.names'
+    rootdir   -- root of directory tree to search for files
+
     """
-    schema_name = file_base + NAMES_EXT
-    data_name = file_base + DATA_EXT
-    schema_file = find_file(schema_name, rootdir)
-    if schema_file is None:
+    schema_name = file_base + _NAMES_EXT
+    schema_filename = _find_file(schema_name, rootdir)
+    if schema_filename is None:
         raise ValueError('Schema file not found')
-    data_file = find_file(data_name, rootdir)
-    if data_file is None:
+
+    data_name = file_base + _DATA_EXT
+    data_filename = _find_file(data_name, rootdir)
+    if data_filename is None:
         raise ValueError('Data file not found')
-    return _parse_c45(schema_file, data_file)
+
+    return _parse_c45(schema_filename, data_filename)
 
 def _parse_c45(schema_filename, data_filename):
     """Parses C4.5 given file names"""
@@ -229,28 +240,33 @@ def _parse_c45(schema_filename, data_filename):
     return examples
 
 def _parse_schema(schema_filename):
+    """Parses C4.5 '.names' schema file"""
     features = []
     needs_id = True
     with open(schema_filename) as schema_file:
         for line in schema_file:
             feature = _parse_feature(line, needs_id)
             if feature is not None:
-                if (needs_id and
-                    feature.type == Feature.Type.ID):
+                if (needs_id and feature.type == Feature.Type.ID):
                     needs_id = False
                 features.append(feature)
+
+    # Fix the problem that the class feature is listed first in the
+    # '.names' file, but is the last feature in the '.data' file
     try:
         features.remove(Feature.CLASS)
     except:
-        raise Exception('File does not contain worthless "Class" line.')
+        raise Exception('File does not contain "Class" line')
     features.append(Feature.CLASS)
+
     return Schema(features)
 
 def _parse_feature(line, needs_id):
     """
-    Parse a feature from the given line;
-    second argument indicates whether we
-    need an ID for our schema
+    Parse a feature from the given line. The second argument
+    indicates whether we need an ID for our schema, in which
+    case the first non-CLASS feature is selected.
+
     """
     line = _trim_line(line)
     if len(line) == 0:
@@ -263,20 +279,21 @@ def _parse_feature(line, needs_id):
     if colon < 0:
         raise Exception('No feature name found.')
     name = line[:colon].strip()
-    remainder = line[colon+1:]
+    remainder = line[colon + 1:]
     values = _parse_values(remainder)
     if needs_id:
-        return Feature(name, Feature.Type.ID, values)
+        return feature(name, feature.type.id, values)
     elif len(values) == 1 and values[0].startswith('continuous'):
-        return Feature(name, Feature.Type.CONTINUOUS)
+        return feature(name, feature.type.continuous)
     elif len(values) == 2 and '0' in values and '1' in values:
-        return Feature(name, Feature.Type.BINARY)
+        return feature(name, feature.type.binary)
     else:
-        return Feature(name, Feature.Type.NOMINAL, values)
+        return feature(name, feature.type.nominal, values)
 
-def _parse_values(remainder):
+def _parse_values(value_string):
+    """Parse comma-delimited values from a string"""
     values = list()
-    for raw in remainder.split(','):
+    for raw in value_string.split(','):
         raw = raw.strip()
         if len(raw) > 1 and raw[0] == '"' and raw[-1] == '"':
             raw = raw[1:-1].strip()
@@ -284,11 +301,13 @@ def _parse_values(remainder):
     return values
 
 def _parse_examples(schema, data_filename):
+    """Parse examples from a '.data' file given a schema"""
     exset = ExampleSet(schema)
     with open(data_filename) as data_file:
         for line in data_file:
             line = _trim_line(line)
             if len(line) == 0:
+                # Skip blank line
                 continue
             try:
                 ex = _parse_example(schema, line)
@@ -297,17 +316,22 @@ def _parse_examples(schema, data_filename):
                 import traceback
                 traceback.print_exc(file=sys.stderr)
                 print >> sys.stderr, 'Warning: skipping line: "%s"' % line
+
     return exset
 
 def _parse_example(schema, line):
+    """Parse a single example from the line of a data file"""
     values = _parse_values(line)
     if len(values) != len(schema):
         raise Exception('Feature-data size mismatch: %s' % line)
+
     ex = Example(schema)
     for i, value in enumerate(values):
         if value == '?':
-            # Unknown value says 'None'
+            # Unknown value remains 'None'
             continue
+
+        # Cast to proper type
         stype = schema[i].type
         if (stype == Feature.Type.ID or
             stype == Feature.Type.NOMINAL):
@@ -319,23 +343,21 @@ def _parse_example(schema, line):
             ex[i] = float(value)
         else:
             raise ValueError('Unknown schema type "%s"' % stype)
+
     return ex
 
 def _trim_line(line):
-    """
-    Removes comments and periods
-    from the given line
-    """
+    """Removes comments and periods from the given line"""
     line = re.sub(_COMMENT_RE, '', line)
     line = line.strip()
     if len(line) > 0 and line[-1] == '.':
         line = line[:-1].strip()
     return line
 
-def find_file(filename, rootdir):
+def _find_file(filename, rootdir):
     """
-    Finds a file with filename located in
-    some subdirectory of the current directory
+    Finds a file with filename located in some
+    subdirectory of the root directory
     """
     import os
     for dirpath, _, filenames in os.walk(rootdir):
