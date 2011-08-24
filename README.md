@@ -26,7 +26,7 @@ methods so that syntax like:
 
     >>> dataset[i][j]
 
-gives the `j`th value of the `i`th example, and:
+gives the value of the `j`th feature of the `i`th example, and:
 
     >>> for example in dataset: ...
 
