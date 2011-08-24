@@ -1,6 +1,23 @@
 """
-Data structures for the schemas
-of C4.5 data sets
+This module contains functions and classes used to parse and
+represent data stored in the C4.5 format.
+
+An Example is a list of Features that complies to some
+Schema, which describes feature types and values. An
+ExampleSet is a list of Examples that all comply to the same
+Schema.
+
+ExampleSets, Examples, and Schemas all implement the
+necessary sequence methods so that syntax like:
+
+>>> dataset[i][j]
+
+gives the jth value of the ith example, and:
+
+>>> for example in dataset: ...
+
+iterates through examples in the dataset.
+
 """
 import re
 import sys
@@ -12,13 +29,12 @@ import collections
 
 class Feature(object):
     """
-    Information for a feature
-    of C4.5 data
+    Describes a feature by name, type, and values
     """
 
     class Type:
         """
-        Type of feature
+        Enumerate types of features
         """
         CLASS      = 'CLASS'
         ID         = 'ID'
@@ -69,12 +85,13 @@ class Feature(object):
         else:
             return value
 
-
+# Class label: special singleton feature
 Feature.CLASS = Feature("CLASS", Feature.Type.CLASS)
 
 class Schema(collections.Sequence):
     """
     Represents a schema for C4.5 data
+    as a sequence of features
     """
 
     def __init__(self, features):
@@ -105,18 +122,59 @@ class Schema(collections.Sequence):
 
     def __getitem__(self, key):
         return self.features[key]
-"""
-Data structures for storing examples
-and sets of examples
-"""
 
 class ExampleSet(collections.MutableSequence):
     """
-    Holds a set of examples
+    Represents a sequence of examples that
+    all comply to the same schema
     """
-    def __init__(self, schema):
-        self.schema = schema
+
+    def __init__(self, schema_or_seq):
         self.examples = []
+        if type(schema_or_seq) == Schema:
+            self.schema = schema_or_seq
+        else:
+            self.schema = None
+            try:
+                self.append(schema_or_seq)
+            except:
+                raise ValueError('Argument must be schema or non-empty list of examples')
+
+    def to_float(self, mapper=None):
+        """
+        Convert this example set into a list of list
+        of floats. Useful for constructing NumPy arrays.
+
+        The mapper is a function applied to each example
+        after it has been turned into a list of floats,
+        and can be used to standardize data, for example.
+
+        """
+        return [ex.to_float(mapper) for ex in self]
+
+    def schema_check(arg):
+        """
+        Wraps call to function f with a schema
+        check on the argument specified by 'arg.'
+        """
+        def outer_wrapper(f):
+            def inner_wrapper(self, *args, **kwargs):
+                # Check Schema (if one exists)
+                if (self.schema is not None and
+                    args[arg].schema != self.schema):
+                    raise ValueError('Schema mismatch')
+
+                # Call function
+                retval = f(self, *args, **kwargs)
+
+                # If successful, set schema if none
+                if self.schema is None:
+                    self.schema = args[arg].schema
+
+                return retval
+
+            return inner_wrapper
+        return outer_wrapper
 
     def __len__(self):
         return len(self.examples)
@@ -130,29 +188,26 @@ class ExampleSet(collections.MutableSequence):
     def __getitem__(self, key):
         return self.examples[key]
 
+    @schema_check(1)
     def __setitem__(self, key, example):
-        if example.schema != self.schema:
-            raise ValueError('Schema mismatch')
         self.examples[key] = example
 
     def __delitem__(self, key):
         del self.examples[key]
 
+    @schema_check(1)
     def insert(self, key, example):
-        if example.schema != self.schema:
-            raise ValueError('Schema mismatch')
         return self.examples.insert(key, example)
 
+    @schema_check(0)
     def append(self, example):
-        if example.schema != self.schema:
-            raise ValueError('Schema mismatch')
-        super(ExampleSet,self).append(example)
+        super(ExampleSet, self).append(example)
 
     def __repr__(self):
-        return '<%s, %s>' % (self.schema, self.examples)
+        return '<%s, %s>' % (repr(self.schema), repr(self.examples))
 
-    def to_float(self, normalizer=None):
-        return [ex.to_float(normalizer) for ex in self]
+    def __str__(self):
+        return '[%s]' % ',\n '.join(map(str, self.examples))
 
 class Example(collections.MutableSequence):
     """
@@ -163,6 +218,14 @@ class Example(collections.MutableSequence):
         self.schema = schema
         self.features = [None for i in range(len(schema))]
         self.weight = 1.0
+
+    def to_float(self, mapper=None):
+        raw_list = [feature.to_float(value)
+                    for feature, value in zip(self.schema, self)]
+        if mapper is None:
+            return raw_list
+        else:
+            return mapper(raw_list)
 
     def __len__(self):
         return len(self.features)
@@ -186,13 +249,11 @@ class Example(collections.MutableSequence):
         return self.features.insert(key, item)
 
     def __repr__(self):
-        return '<%s, %s, %s>' % (self.schema, self.features, self.weight)
+        return '<%s, %s, %s>' % tuple(
+            map(repr, (self.schema, self.features, self.weight)))
 
-    def to_float(self, normalizer=None):
-        if normalizer is None:
-            normalizer = lambda x: x
-        return normalizer([feature.to_float(value)
-                           for feature, value in zip(self.schema, self)])
+    def __str__(self):
+        return str(self.features)
 
 ###############################################################################
 #                            CODE TO PARSE C4.5                               #
@@ -230,11 +291,15 @@ def _parse_c45(schema_filename, data_filename):
     try:
         schema = _parse_schema(schema_filename)
     except Exception as e:
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         raise Exception('Error parsing schema: %s' % e)
 
     try:
         examples = _parse_examples(schema, data_filename)
     except Exception as e:
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         raise Exception('Error parsing examples: %s' % e)
 
     return examples
@@ -282,13 +347,13 @@ def _parse_feature(line, needs_id):
     remainder = line[colon + 1:]
     values = _parse_values(remainder)
     if needs_id:
-        return feature(name, feature.type.id, values)
+        return Feature(name, Feature.Type.ID, values)
     elif len(values) == 1 and values[0].startswith('continuous'):
-        return feature(name, feature.type.continuous)
+        return Feature(name, Feature.Type.CONTINUOUS)
     elif len(values) == 2 and '0' in values and '1' in values:
-        return feature(name, feature.type.binary)
+        return Feature(name, Feature.Type.BINARY)
     else:
-        return feature(name, feature.type.nominal, values)
+        return Feature(name, Feature.Type.NOMINAL, values)
 
 def _parse_values(value_string):
     """Parse comma-delimited values from a string"""
