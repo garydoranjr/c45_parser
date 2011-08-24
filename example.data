@@ -1,0 +1,12 @@
+1,0,Monday,0.94, A12,0
+2,0,Tuesday ,1.0, A13,0
+3,0,Wednesday,1.5, "A14",0
+4,?, Thursday,11e-1, A14,1
+//this is a comment
+5,0, Friday,2.3, A12 ,1
+6,1,Wednesday,0.86,A13,0. //lines may end with periods
+7,0,Tuesday,3.14,A12,1.
+8,0,"Monday",2.81,?,0
+9,1,Thursday, 0.9932456,A13,1
+10,1,Friday, 2.0000 ,A12,1.
+
