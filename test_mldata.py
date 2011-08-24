@@ -3,7 +3,7 @@ import unittest
 
 from mldata import *
 
-class TestDataParser(unittest.TestCase):
+class TestMLData(unittest.TestCase):
 
     def setUp(self):
         self.exset = parse_c45('example')
@@ -28,9 +28,18 @@ class TestDataParser(unittest.TestCase):
     def test_missing(self):
         self.assertTrue(self.exset[7][4] is None)
 
+    def test_selection(self):
+        subset = ExampleSet(ex for ex in self.exset if ex[2] == 'Monday')
+        self.assertEqual(len(subset), 2)
+        self.assertEqual(subset.schema, self.exset.schema)
+
+    def test_empty_set(self):
+        empty = ExampleSet()
+        self.assertTrue(empty.schema is None)
+
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestDataParser))
+    suite.addTest(unittest.makeSuite(TestMLData))
     return suite
 
 if __name__ == '__main__':

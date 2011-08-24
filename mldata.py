@@ -129,16 +129,18 @@ class ExampleSet(collections.MutableSequence):
     all comply to the same schema
     """
 
-    def __init__(self, schema_or_seq):
+    def __init__(self, schema_or_seq=None):
         self.examples = []
-        if type(schema_or_seq) == Schema:
+        if schema_or_seq is None:
+            self.schema = None
+        elif type(schema_or_seq) == Schema:
             self.schema = schema_or_seq
         else:
             self.schema = None
             try:
-                self.append(schema_or_seq)
+                self += schema_or_seq
             except:
-                raise ValueError('Argument must be schema or non-empty list of examples')
+                raise ValueError('Argument must be schema or list of examples')
 
     def to_float(self, mapper=None):
         """
