@@ -4,9 +4,11 @@ try:
     # arguments that distutils doesn't understand
     setuptools_kwargs = {
         'install_requires': [
-          ],
+            'numpy',
+            'scipy'
+        ],
         'provides': ['c45_parser'],
-        }
+    }
 except ImportError:
     from distutils.core import setup
     setuptools_kwargs = {}
@@ -19,7 +21,8 @@ setup(name='c45_parser',
       ),
       author='Gary Doran',
       author_email='gbd6@case.edu',
-      url='https://github.com/cwru-compilers/regex_compiler',
+      url='https://github.com/garydoranjr/mldata.git',
+      license="BSD compatable (see the LICENSE file)",
       packages=['c45_parser'],
       platforms=['unix'],
       scripts=['bin/c45_to_matlab'],
