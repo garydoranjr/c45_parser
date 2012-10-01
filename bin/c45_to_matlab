@@ -2,12 +2,12 @@
 import numpy as np
 from scipy.io import savemat
 
-from mldata import parse_c45
+from c45_parser import load_c45
 
 def main(dataset, inputdir='.', outputfile=None):
     if outputfile is None:
         outputfile = dataset
-    examples = parse_c45(dataset, inputdir)
+    examples = load_c45(dataset, inputdir)
     X = np.array(examples.to_float(), dtype=float)
     savemat(outputfile, {dataset: X})
 
@@ -25,3 +25,4 @@ if __name__ == '__main__':
         exit()
     options['dataset'] = args[0]
     main(**options)
+
