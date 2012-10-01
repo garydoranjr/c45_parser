@@ -1,15 +1,15 @@
 A C4.5 Parser
 =============
 
-by Gary Doran (gdb6@case.edu)
+by Gary Doran (<gdb6@case.edu>) and Tim Henderson (<tim.tadh@gmail.com>).
 
 For parsering datasets in the
-[c4.5 dataformat](http://www.cs.washington.edu/dm/vfml/appendixes/c45.htm)
+[C4.5 dataformat](http://www.cs.washington.edu/dm/vfml/appendixes/c45.htm)
 
 Installation
 ------------
 
-This package can be installed in to ways (the easy way):
+This package can be installed in two ways (the easy way):
 
     pip install -e git+https://github.com/garydoranjr/mldata.git#egg=c45_parser
 
