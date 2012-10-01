@@ -90,5 +90,5 @@ Questions and Issues
 If you find any bugs or have any questions about this code, please create an
 issue on [GitHub](https://github.com/garydoranjr/mldata/issues), or contact Gary
 Doran at <gbd6@case.edu> (you can also contact Tim Henderson at
-<tim.tadh@gmail.com>.
+<tim.tadh@gmail.com>).
 
