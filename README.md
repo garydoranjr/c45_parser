@@ -11,7 +11,7 @@ Installation
 
 This package can be installed in two ways (the easy way):
 
-    pip install -e git+https://github.com/garydoranjr/mldata.git#egg=c45_parser
+    pip install -e git+https://github.com/garydoranjr/c45_parser.git#egg=c45_parser
 
 or by running the setup file manually
 
@@ -88,7 +88,7 @@ Questions and Issues
 ====================
 
 If you find any bugs or have any questions about this code, please create an
-issue on [GitHub](https://github.com/garydoranjr/mldata/issues), or contact Gary
+issue on [GitHub](https://github.com/garydoranjr/c45_parser/issues), or contact Gary
 Doran at <gbd6@case.edu> (you can also contact Tim Henderson at
 <tim.tadh@gmail.com>).
 
