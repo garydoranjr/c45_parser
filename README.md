@@ -3,7 +3,7 @@ A C4.5 Parser
 
 by Gary Doran (<gdb6@case.edu>) and Tim Henderson (<tim.tadh@gmail.com>).
 
-For parsering datasets in the
+For parsing datasets in the
 [C4.5 dataformat](http://www.cs.washington.edu/dm/vfml/appendixes/c45.htm)
 
 Installation
