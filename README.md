@@ -11,6 +11,9 @@ Installation
 
 This package can be installed in two ways (the easy way):
 
+    # If needed:
+    # pip install numpy
+    # pip install scipy
     pip install -e git+https://github.com/garydoranjr/c45_parser.git#egg=c45_parser
 
 or by running the setup file manually
