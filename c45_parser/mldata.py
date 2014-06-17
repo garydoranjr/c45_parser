@@ -265,7 +265,7 @@ _NAMES_EXT = '.names'
 _DATA_EXT = '.data'
 
 _COMMENT_RE = '//.*'
-_BINARY_RE = '\\s*0\\s*,\\s*1\\s*'
+_BINARY_RE = '\\s*0\\s*,\\s*1\\s*|\\s*1\\s*,\\s*0\\s*'
 
 def parse_c45(file_base, rootdir='.'):
     """
